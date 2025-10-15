@@ -268,6 +268,111 @@ class TransectStrategy(SeedingStrategy):
 
         return seed_locations
 
+class FilePointsStrategy(SeedingStrategy):
+    """
+    Seeding strategy to read (x, y) locations from a file.
+
+    Expected settings under `seeding.strategy.file_points`:
+
+    - path: str                 # required. Path to the file with coordinates
+    - x_col: str|int = 0        # optional. Column name or 0-based index for x
+    - y_col: str|int = 1        # optional. Column name or 0-based index for y
+    - has_header: bool = True   # optional. If False, treat as no header
+    - deduplicate: bool = True  # optional. Drop duplicate rows
+    - dropna: bool = True       # optional. Drop rows with NaNs in x/y
+    - bbox: str|dict = None     # optional. Restrict to bbox: "xmin,ymin xmax,ymax" or dict
+    - stride: int = 1           # optional. Keep every `stride`-th point (≥1)
+    """
+
+    def seed(self, config: PopulationConfig) -> list[Tuple[int, float, float]]:
+        import os
+        import pandas as pd
+        import numpy as np
+
+        settings = getattr(config, 'strategy_settings', {})
+        path = settings.get('path', None)
+        if not path:
+            raise MissingConfigurationParameter('"path" must be provided for FilePointsStrategy.')
+
+        # Windows path safety
+        path = os.path.expanduser(str(path))
+
+        x_col = settings.get('x_col', 0)
+        y_col = settings.get('y_col', 1)
+        has_header = bool(settings.get('has_header', True))
+        deduplicate = bool(settings.get('deduplicate', True))
+        dropna = bool(settings.get('dropna', True))
+        stride = int(settings.get('stride', 1))
+        if stride < 1:
+            raise ValueError('"stride" must be >= 1.')
+
+        # Parse optional bbox
+        bbox = settings.get('bbox', None)
+        xmin = ymin = xmax = ymax = None
+        if bbox:
+            if isinstance(bbox, str):
+                parts = bbox.replace(',', ' ').split()
+                if len(parts) != 4:
+                    raise ValueError(f'Invalid bbox string: {bbox}')
+                xmin, ymin, xmax, ymax = map(float, parts)
+            elif isinstance(bbox, dict):
+                xmin = float(bbox['xmin']); ymin = float(bbox['ymin'])
+                xmax = float(bbox['xmax']); ymax = float(bbox['ymax'])
+            else:
+                raise ValueError('bbox must be str "xmin,ymin xmax,ymax" or dict with xmin/ymin/xmax/ymax')
+
+        if config.quantity is None:
+            raise MissingConfigurationParameter('"quantity" must be provided for FilePointsStrategy.')
+        quantity = int(config.quantity)
+
+        if not os.path.isfile(path):
+            raise FileNotFoundError(f'Could not find coordinates file: {path}')
+
+        # --- Read file, auto-delimiter handling via pandas (engine="python" allows sep=None sniffing)
+        try:
+            df = pd.read_csv(
+                path,
+                sep=None, engine="python",
+                header=0 if has_header else None
+            )
+        except Exception as e:
+            # Fallback: whitespace-delimited
+            df = pd.read_csv(path, delim_whitespace=True, header=0 if has_header else None)
+
+        # Resolve columns by name or index
+        def _resolve_col(col, df):
+            if isinstance(col, int):
+                # Convert positional index to actual column name
+                return df.columns[col]
+            return col  # assume str
+        x_name = _resolve_col(x_col, df)
+        y_name = _resolve_col(y_col, df)
+
+        if x_name not in df.columns or y_name not in df.columns:
+            raise ValueError(f'Columns not found. Available: {list(df.columns)}; requested x={x_name}, y={y_name}')
+
+        df = df[[x_name, y_name]].copy()
+        df.columns = ['x', 'y']
+
+        if dropna:
+            df = df.dropna(subset=['x', 'y'])
+        if deduplicate:
+            df = df.drop_duplicates(subset=['x', 'y'])
+
+        # Optional bbox mask
+        if xmin is not None:
+            df = df[(df['x'] >= xmin) & (df['x'] <= xmax) & (df['y'] >= ymin) & (df['y'] <= ymax)]
+
+        # Optional stride
+        if stride > 1 and not df.empty:
+            df = df.iloc[::stride, :]
+
+        if df.empty:
+            raise ValueError('No valid (x, y) points found after filtering.')
+
+        # Build seed locations
+        seed_locations = [(quantity, float(x), float(y)) for x, y in zip(df['x'].to_numpy(), df['y'].to_numpy())]
+        return seed_locations
 
 class ParticleFactory:
     @staticmethod
@@ -293,6 +398,7 @@ class ParticleFactory:
             'random': RandomStrategy(),
             'grid': GridStrategy(),
             'transect': TransectStrategy(),
+            'file_points': FilePointsStrategy(),
         }
 
         particle_type = getattr(config, 'particle_type', '')
@@ -312,6 +418,7 @@ class ParticleFactory:
             'random': RandomStrategy(),
             'grid': GridStrategy(),
             'transect': TransectStrategy(),
+            'file_points': FilePointsStrategy(),
         }
 
         # computes seeding positions using the strategy in config
