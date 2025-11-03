@@ -117,22 +117,17 @@
             "type": "object",
             "additionalProperties": false,
             "properties": {
-                "f": {
-                    "type": "number",
-                    "default": 0.1,
-                    "description": "f parameter for Soulsby method (legacy parameter)"
-                },
-                "r": {
-                    "type": "number",
-                    "default": 0.8,
-                    "description": "r parameter for Soulsby method (legacy parameter)"
-                },
                 "flow_field_name": {
                     "type": "array",
                     "items": {
                         "type": "string"
                     },
                     "description": "List of flow field names to use for Soulsby method (e.g., ['grain_velocity', 'soulsby_a', 'soulsby_b'])"
+                },
+                "tracer_grain_size": {
+                    "type": "number",
+                    "default": 0.0002,
+                    "description": "Grain size of tracer sediment [m]"
                 },
                 "background_grain_size": {
                     "type": "number",
