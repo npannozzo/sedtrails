@@ -25,7 +25,11 @@ def main():
     """Main debug function that runs the SedTRAILS simulation."""
     
     # Configuration
-    config_file = r"U:\MangroveConnectivity\pyST\02_soulsby-debugging\001_defaults\config.example_soulsby.yaml"
+    #config_file = r"C:\surfdrive\650_SedTRAILS\pyTesting\02_soulsby-debugging\005_finer\config.example_soulsby.yaml"
+    #config_file = r"C:\surfdrive\650_SedTRAILS\pyTesting\02_soulsby-debugging\006_coarser\config.example_soulsby.yaml"
+    #config_file = r"C:\surfdrive\650_SedTRAILS\pyTesting\02_soulsby-debugging\007_finer_hidExp_off\config.example_soulsby.yaml"
+    #config_file = r"C:\surfdrive\650_SedTRAILS\pyTesting\02_soulsby-debugging\008_coarser_hidExp_off\config.example_soulsby.yaml"
+    config_file = r"C:\surfdrive\650_SedTRAILS\pyTesting\01_default-debugging\004_no_probability\sedtrails-example.yaml"
     
     # Set up logging for verbose output (equivalent to CLI verbose mode)
     logging.basicConfig(
@@ -81,7 +85,7 @@ def main():
 def debug_config_loading():
     """Debug function to test just the configuration loading part."""
     
-    config_file = r"U:\MangroveConnectivity\pyST\02_soulsby-debugging\001_defaults\config.example_soulsby.yaml"
+    config_file = r"C:\surfdrive\650_SedTRAILS\pyTesting\02_soulsby-debugging\005_finer\config.example_soulsby.yaml"
     
     try:
         print("Debug: Testing configuration loading...")
@@ -107,7 +111,7 @@ def debug_config_loading():
 def debug_simulation_creation():
     """Debug function to test just the simulation object creation."""
     
-    config_file = r"U:\MangroveConnectivity\pyST\02_soulsby-debugging\002_debug1\config.example_soulsby.yaml"
+    config_file = r"C:\surfdrive\650_SedTRAILS\pyTesting\02_soulsby-debugging\005_finer\config.example_soulsby.yaml"
     
     try:
         print("Debug: Testing simulation creation...")
