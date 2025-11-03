@@ -2,6 +2,7 @@ import os
 import sys
 import logging
 import numpy as np
+from pathlib import Path
 from tqdm import tqdm
 
 from sedtrails.transport_converter.format_converter import FormatConverter, SedtrailsData
@@ -126,8 +127,27 @@ class Simulation:
     def _get_output_dir(self):
         """
         Returns the output directory for the simulation.
+        
+        If the output directory is not explicitly specified or is a default value,
+        uses the directory containing the config file as the base directory.
         """
-        return self._controller.get('outputs.directory')
+        output_dir = self._controller.get('outputs.directory')
+        
+        # Check if output_dir is a default or relative path that should be relative to config file
+        if output_dir is None or output_dir in ['.', './output', 'output', './results', 'results']:
+            # Use the config file's directory as the base
+            config_file_dir = Path(self._config_file).parent
+            if output_dir in ['./output', 'output']:
+                # Preserve the 'output' subdirectory but make it relative to config file
+                output_dir = config_file_dir / 'output'
+            elif output_dir in ['./results', 'results']:
+                # Preserve the 'results' subdirectory but make it relative to config file
+                output_dir = config_file_dir / 'results'
+            else:
+                # Use config file directory directly
+                output_dir = config_file_dir
+        
+        return str(output_dir)
 
     def _get_physics_config(self):
         """
