@@ -492,6 +492,8 @@ class ParticlePopulation:
             A dictionary containing the flow field information.
         current_timestep : float
             The current time step in the simulation in seconds.
+        transport_probability_method: str
+            The method used to calculate transport probability.
 
         """
 
