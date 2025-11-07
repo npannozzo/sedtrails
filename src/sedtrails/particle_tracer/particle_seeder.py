@@ -456,9 +456,6 @@ class ParticlePopulation:
         self.particles['is_inside'] = self._outer_envelope.contains_points(
             np.column_stack((self.particles['x'], self.particles['y']))
         )
-
-        # # Compute whether particles are exposed (or buried)
-        # self.particles['is_exposed'] = self.particles['burial_depth'] < self.particles['mixing_depth']
                 
         # New conditional logic based on transport_probability_method
         if self.population_config.population_config['transport_probability'] == 'no_probability':
