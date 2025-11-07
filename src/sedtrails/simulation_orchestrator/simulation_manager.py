@@ -76,7 +76,7 @@ class Simulation:
         self.dashboard = self._create_dashboard()  #
         self.writer = self.data_manager.writer
 
-        setup_logging(output_dir=self.writer.output_dir)  # Initialize logging in the results directory
+        setup_logging(output_dir=str(self.writer.output_dir))  # Initialize logging in the results directory
         self.logger = logging.getLogger(__name__)
         self.logger.info('Configuration loaded')
 
@@ -130,6 +130,11 @@ class Simulation:
         
         If the output directory is not explicitly specified or is a default value,
         uses the directory containing the config file as the base directory.
+        
+        Returns
+        -------
+        Path
+            Path object representing the output directory
         """
         output_dir = self._controller.get('outputs.directory')
         
@@ -146,8 +151,11 @@ class Simulation:
             else:
                 # Use config file directory directly
                 output_dir = config_file_dir
+        else:
+            # Convert to Path object for consistency
+            output_dir = Path(output_dir)
         
-        return str(output_dir)
+        return output_dir
 
     def _get_physics_config(self):
         """
@@ -525,7 +533,7 @@ class Simulation:
 
         # from sedtrails.data_manager.simulation_netcdf_writer import SimulationNetCDFWriter
 
-        # writer = SimulationNetCDFWriter(self._get_output_dir())
+        # writer = SimulationNetCDFWriter(str(self._get_output_dir()))
         # writer.write_simulation_results(
         #     populations,
         #     trajectory_data=self.data_manager.trajectory_data,
