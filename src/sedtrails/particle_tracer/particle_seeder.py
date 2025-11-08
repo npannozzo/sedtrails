@@ -16,17 +16,19 @@ Random: Release particles at random locations (x,y) within an area
 
 import random
 from abc import ABC, abstractmethod
-from sedtrails.particle_tracer.particle import Particle
-from sedtrails.transport_converter.sedtrails_data import SedtrailsData
-from sedtrails.exceptions import MissingConfigurationParameter
-from typing import List, Tuple, Dict, Any
 from dataclasses import dataclass, field
-from sedtrails.application_interfaces.find import find_value
-from numpy import ndarray
-from sedtrails.particle_tracer.position_calculator_numba import create_numba_particle_calculator
+from typing import Any, Dict, List, Tuple, Union
+
 import numpy as np
 from matplotlib.path import Path
+from numpy import ndarray
 from scipy.spatial import ConvexHull
+
+from sedtrails.application_interfaces.find import find_value
+from sedtrails.exceptions import MissingConfigurationParameter
+from sedtrails.particle_tracer.particle import Particle
+from sedtrails.particle_tracer.position_calculator_numba import create_numba_particle_calculator
+from sedtrails.transport_converter.sedtrails_data import SedtrailsData
 
 
 @dataclass
@@ -285,7 +287,7 @@ class ParticleFactory:
         list[Particle]
             List of created particles with positions and release times set.
         """
-        from sedtrails.particle_tracer.particle import Sand, Mud, Passive
+        from sedtrails.particle_tracer.particle import Mud, Passive, Sand
 
         PARTICLE_MAP = {'sand': Sand, 'mud': Mud, 'passive': Passive}
         STRATEGY_MAP = {
@@ -304,7 +306,7 @@ class ParticleFactory:
         if strategy_name.lower() not in STRATEGY_MAP:
             raise ValueError(f'Unknown seeding strategy: {strategy_name}')
         StrategyClass = STRATEGY_MAP[strategy_name.lower()]
-        from sedtrails.particle_tracer.particle import Sand, Mud, Passive
+        from sedtrails.particle_tracer.particle import Mud, Passive, Sand
 
         PARTICLE_MAP = {'sand': Sand, 'mud': Mud, 'passive': Passive}
         STRATEGY_MAP = {
@@ -365,7 +367,7 @@ class ParticlePopulation:
     particles: Dict = field(init=False, default_factory=dict)  # a dictionary with arrays
     _field_interpolator: Any = field(init=False)  # holds a Numba function
     _position_calculator: Any = field(init=False)  # holds a Numba function
-    _current_time: ndarray = field(init=False)
+    _current_time: float  # ndarray = field(init=False)
     _field_mixing_depth: ndarray = field(init=False)  # TODO: we're not using this field yet
     _field_transport_probability: ndarray = field(init=False)  # TODO: we're not using this field yet
 
@@ -391,14 +393,14 @@ class ParticlePopulation:
         self._outer_envelope = Path(coords[hull.vertices])
 
     def update_information(
-        self, current_time: ndarray, mixing_depth: ndarray, transport_probability: ndarray, bed_level: ndarray
+        self, current_time: Union[int, float], mixing_depth: ndarray, transport_probability: ndarray, bed_level: ndarray
     ) -> None:
         """
         Updates field data information for particles in the population.
 
         Parameters
         ----------
-        current_time : ndarray
+        current_time : float, int
             The current time in the simulation.
         mixing_depth : ndarray
             The mixing depth of the flow field.

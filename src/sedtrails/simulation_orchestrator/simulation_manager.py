@@ -1,23 +1,23 @@
+import logging
 import os
 import sys
-import logging
+from typing import Any, Optional
+
 import numpy as np
+import xarray as xr
 from tqdm import tqdm
 
-from sedtrails.transport_converter.format_converter import FormatConverter, SedtrailsData
-from sedtrails.transport_converter.physics_converter import PhysicsConverter
-from sedtrails.particle_tracer.data_retriever import FieldDataRetriever  # Updated import
-from sedtrails.particle_tracer.particle import Particle
 from sedtrails.application_interfaces.configuration_controller import ConfigurationController
 from sedtrails.data_manager import DataManager
-from sedtrails.particle_tracer.timer import Time, Duration, Timer
-from sedtrails.simulation_orchestrator.global_logger import setup_logging, log_simulation_state
-
-
 from sedtrails.exceptions.exceptions import ConfigurationError
-from sedtrails.pathway_visualizer import SimulationDashboard
-from typing import Any, Optional
 from sedtrails.particle_tracer import ParticleSeeder
+from sedtrails.particle_tracer.data_retriever import FieldDataRetriever  # Updated import
+from sedtrails.particle_tracer.particle import Particle
+from sedtrails.particle_tracer.timer import Duration, Time, Timer
+from sedtrails.pathway_visualizer import SimulationDashboard
+from sedtrails.simulation_orchestrator.global_logger import log_simulation_state, setup_logging
+from sedtrails.transport_converter.format_converter import FormatConverter, SedtrailsData
+from sedtrails.transport_converter.physics_converter import PhysicsConverter
 
 
 class Simulation:
@@ -304,7 +304,8 @@ class Simulation:
 
         # Create SedTrails dataset using DataManager's writer (composition)
         total_particles = sum([len(pop.particles['x']) for pop in populations])
-        max_timesteps = (simulation_time.duration.seconds // simulation_time.time_step.seconds) + 1
+        estimated_timesteps = (simulation_time.duration.seconds // simulation_time.time_step.seconds) + 1
+        max_timesteps = estimated_timesteps * 2  # Initial buffer
 
         xr_data = self.data_manager.writer.create_dataset(
             N_particles=total_particles,
@@ -394,19 +395,23 @@ class Simulation:
                 # Collect data from all populations for this timestep using DataManager
                 self.data_manager.collect_timestep_data(xr_data, populations, timer.step_count, timer.current)
 
-                # For dashboard, use first population data
-                first_population = populations[0]
-                particle_data = {
-                    'x': first_population.particles['x'],
-                    'y': first_population.particles['y'],
-                    'burial_depth': first_population.particles['burial_depth'],
-                    'mixing_depth': first_population.particles['mixing_depth'],
-                }
+                # Check if we need to expand the time dimension
+                if timer.step_count >= max_timesteps - 10:  # 10-step safety margin
+                    old_max = max_timesteps
+                    max_timesteps = int(max_timesteps * 1.5)  # Expand by 50%
+                    self.logger.info(f'Expanding time dimension from {old_max} to {max_timesteps}')
+                    xr_data = self._expand_time_dimension(xr_data, max_timesteps)
 
                 # Update dashboard if enabled
                 if self.dashboard is not None:
-                    # Get first population
-
+                    # For dashboard, use first population data
+                    first_population = populations[0]
+                    particle_data = {
+                        'x': first_population.particles['x'],
+                        'y': first_population.particles['y'],
+                        'burial_depth': first_population.particles['burial_depth'],
+                        'mixing_depth': first_population.particles['mixing_depth'],
+                    }
                     # Get bathymetry data
                     bathymetry = retriever.get_scalar_field(timer.current, 'bed_level')['magnitude']
 
@@ -513,9 +518,98 @@ class Simulation:
         #     filename='simulation_results.nc',
         # )
 
+    def _expand_time_dimension(self, xr_data: xr.Dataset, new_max_timesteps: int) -> xr.Dataset:
+        """
+        Expand the time dimension of the xarray dataset to accommodate more timesteps.
 
-if __name__ == '__main__':
-    sim = Simulation(config_file='examples/config.example_natascia.yaml')
-    sim.run()
+        This method is called when the number of timesteps approaches the allocated buffer size
+        due to adaptive CFL-based timestepping. It pads all time-dependent data variables with
+        NaN values and updates the time coordinate accordingly.
 
-    # NOTE: This will failed on the output saving. But that's success
+        Parameters
+        ----------
+        xr_data : xr.Dataset
+            The xarray dataset containing simulation results with time dimension.
+        new_max_timesteps : int
+            The new maximum number of timesteps to allocate. Must be larger than the current
+            time dimension size.
+
+        Returns
+        -------
+        xr.Dataset
+            The expanded dataset with additional timesteps allocated along the time dimension.
+            New timestep values are filled with NaN.
+
+        Notes
+        -----
+        - Only data variables that have a 'time' dimension are expanded.
+        - The time coordinate is updated to range from 0 to new_max_timesteps - 1.
+        - All newly allocated timesteps are filled with NaN values.
+        - This operation creates a copy of the dataset data in memory.
+
+        Examples
+        --------
+        >>> # Expand dataset from 1000 to 1500 timesteps
+        >>> expanded_data = self._expand_time_dimension(xr_data, 1500)
+        """
+        import numpy as np
+        import xarray as xr
+
+        current_size = len(xr_data.time)
+        additional_steps = new_max_timesteps - current_size
+
+        # Create a dictionary to hold expanded data variables
+        expanded_vars = {}
+
+        # Pad all data variables along time dimension
+        for var_name in xr_data.data_vars:
+            var = xr_data[var_name]
+
+            if 'time' in var.dims:
+                # Get the shape and create padding
+                pad_shape = list(var.shape)
+                time_dim_idx = var.dims.index('time')
+                pad_shape[time_dim_idx] = additional_steps
+
+                # Create NaN-filled array for padding
+                pad_data = np.full(pad_shape, np.nan, dtype=var.dtype)
+
+                # Create DataArray for padding with the same dimensions (except time)
+                # Build coordinates for the padded array
+                pad_coords = {}
+                for dim in var.dims:
+                    if dim == 'time':
+                        pad_coords[dim] = np.arange(current_size, new_max_timesteps)
+                    else:
+                        pad_coords[dim] = var.coords[dim]
+
+                pad_array = xr.DataArray(pad_data, dims=var.dims, coords=pad_coords)
+
+                # Concatenate along time dimension
+                expanded_vars[var_name] = xr.concat([var, pad_array], dim='time')
+            else:
+                # Keep non-time variables as is
+                expanded_vars[var_name] = var
+
+        # Create new dataset with expanded variables
+        expanded_dataset = xr.Dataset(expanded_vars, coords={'time': np.arange(new_max_timesteps)})
+
+        # Copy over any additional coordinates that aren't 'time'
+        for coord_name in xr_data.coords:
+            if coord_name != 'time' and coord_name not in expanded_dataset.coords:
+                expanded_dataset = expanded_dataset.assign_coords({coord_name: xr_data.coords[coord_name]})
+
+        # Copy attributes
+        expanded_dataset.attrs = xr_data.attrs.copy()
+        for var_name in xr_data.data_vars:
+            if var_name in expanded_dataset.data_vars:
+                expanded_dataset[var_name].attrs = xr_data[var_name].attrs.copy()
+
+        return expanded_dataset
+
+
+# if __name__ == '__main__':
+#     sim = Simulation(config_file='examples/config.example_natascia.yaml')
+#     sim.run()
+
+#     # NOTE: This will failed on the output saving. But that's success
