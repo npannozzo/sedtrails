@@ -367,7 +367,7 @@ class ParticlePopulation:
     particles: Dict = field(init=False, default_factory=dict)  # a dictionary with arrays
     _field_interpolator: Any = field(init=False)  # holds a Numba function
     _position_calculator: Any = field(init=False)  # holds a Numba function
-    _current_time: float  # ndarray = field(init=False)
+    _current_time: float = field(init=False)
     _field_mixing_depth: ndarray = field(init=False)  # TODO: we're not using this field yet
     _field_transport_probability: ndarray = field(init=False)  # TODO: we're not using this field yet
 

@@ -552,8 +552,7 @@ class Simulation:
         >>> # Expand dataset from 1000 to 1500 timesteps
         >>> expanded_data = self._expand_time_dimension(xr_data, 1500)
         """
-        import numpy as np
-        import xarray as xr
+
 
         current_size = len(xr_data.time)
         additional_steps = new_max_timesteps - current_size
