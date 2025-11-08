@@ -590,14 +590,11 @@ class Simulation:
                 # Keep non-time variables as is
                 expanded_vars[var_name] = var
 
-        # Create new dataset with expanded variables
-        expanded_dataset = xr.Dataset(expanded_vars, coords={'time': np.arange(new_max_timesteps)})
-
-        # Copy over any additional coordinates that aren't 'time'
-        for coord_name in xr_data.coords:
-            if coord_name != 'time' and coord_name not in expanded_dataset.coords:
-                expanded_dataset = expanded_dataset.assign_coords({coord_name: xr_data.coords[coord_name]})
-
+        # Create new dataset with expanded variables and all original coordinates (replace 'time')
+        expanded_dataset = xr.Dataset(
+            expanded_vars,
+            coords={coord: (np.arange(new_max_timesteps) if coord == 'time' else xr_data.coords[coord]) for coord in xr_data.coords}
+        )
         # Copy attributes
         expanded_dataset.attrs = xr_data.attrs.copy()
         for var_name in xr_data.data_vars:
