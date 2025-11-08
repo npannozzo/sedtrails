@@ -392,47 +392,47 @@ class Simulation:
                         # Update particle position
                         population.update_position(flow_field=flow_field, current_timestep=timer.current_timestep)
 
-                # Collect data from all populations for this timestep using DataManager
-                self.data_manager.collect_timestep_data(xr_data, populations, timer.step_count, timer.current)
+            # Collect data from all populations for this timestep using DataManager
+            self.data_manager.collect_timestep_data(xr_data, populations, timer.step_count, timer.current)
 
-                # Check if we need to expand the time dimension
-                if timer.step_count >= max_timesteps - 10:  # 10-step safety margin
-                    old_max = max_timesteps
-                    max_timesteps = int(max_timesteps * 1.5)  # Expand by 50%
-                    self.logger.info(f'Expanding time dimension from {old_max} to {max_timesteps}')
-                    xr_data = self._expand_time_dimension(xr_data, max_timesteps)
+            # Check if we need to expand the time dimension
+            if timer.step_count >= max_timesteps - 10:  # 10-step safety margin
+                old_max = max_timesteps
+                max_timesteps = int(max_timesteps * 1.5)  # Expand by 50%
+                self.logger.info(f'Expanding time dimension from {old_max} to {max_timesteps}')
+                xr_data = self._expand_time_dimension(xr_data, max_timesteps)
 
-                # Update dashboard if enabled
-                if self.dashboard is not None:
-                    # For dashboard, use first population data
-                    first_population = populations[0]
-                    particle_data = {
-                        'x': first_population.particles['x'],
-                        'y': first_population.particles['y'],
-                        'burial_depth': first_population.particles['burial_depth'],
-                        'mixing_depth': first_population.particles['mixing_depth'],
-                    }
-                    # Get bathymetry data
-                    bathymetry = retriever.get_scalar_field(timer.current, 'bed_level')['magnitude']
+            # Update dashboard if enabled
+            if self.dashboard is not None:
+                # For dashboard, use first population data
+                first_population = populations[0]
+                particle_data = {
+                    'x': first_population.particles['x'],
+                    'y': first_population.particles['y'],
+                    'burial_depth': first_population.particles['burial_depth'],
+                    'mixing_depth': first_population.particles['mixing_depth'],
+                }
+                # Get bathymetry data
+                bathymetry = retriever.get_scalar_field(timer.current, 'bed_level')['magnitude']
 
-                    # Particle data including burial_depth and mixing_depth
+                # Particle data including burial_depth and mixing_depth
 
-                    # Get simulation timing
-                    # plot_interval_str = self._controller.get('output.plot_interval', '1H')
-                    plot_interval_seconds = 3600  # self._parse_duration(plot_interval_str)
+                # Get simulation timing
+                # plot_interval_str = self._controller.get('output.plot_interval', '1H')
+                plot_interval_seconds = 3600  # self._parse_duration(plot_interval_str)
 
-                    # Update dashboard with timing info
+                # Update dashboard with timing info
 
-                    self.dashboard.update(
-                        flow_field,
-                        bathymetry,
-                        particle_data,
-                        timer.current,
-                        timer.current_timestep,
-                        plot_interval_seconds,
-                        simulation_start_time=simulation_time.start,  # Add this
-                        simulation_end_time=simulation_time.end,  # Add this
-                    )
+                self.dashboard.update(
+                    flow_field,
+                    bathymetry,
+                    particle_data,
+                    timer.current,
+                    timer.current_timestep,
+                    plot_interval_seconds,
+                    simulation_start_time=simulation_time.start,  # Add this
+                    simulation_end_time=simulation_time.end,  # Add this
+                )
 
             timer.advance()
 
