@@ -3,17 +3,18 @@ Module for visualizing particle trajectories from SedTRAILS NetCDF output files.
 """
 
 from pathlib import Path
+from typing import Union
 import numpy as np
 import matplotlib.pyplot as plt
 import xarray as xr
 
 
-def read_netcdf(results_file_path):
+def read_netcdf(results_file_path: Path) -> xr.Dataset:
     """Read a SedTRAILS NetCDF file and return the xarray Dataset.
 
     Parameters
     ----------
-    results_file_path : str or pathlib.Path
+    results_file_path : pathlib.Path
         Path to the SedTRAILS NetCDF file.
 
     Returns
