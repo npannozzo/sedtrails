@@ -348,9 +348,9 @@ def compute_mixing_layer_thickness(
     Lagrangian modelling reveals sediment pathways at evolving coasts.
     Scientific Reports, 15(1), 8793.
 
-    Bertin, X., Bruneau, N., Breilh, J. F., Fortunato, A. B., & Karpytchev, M. (2012).
-    Importance of wave age and resonance in storm surges: The case Xynthia, Bay of Biscay.
-    Ocean Modelling, 42, 16-30.
+    Bertin, X., Castelle, B., Anfuso, G., & Ferreira, Ó. (2008). 
+    Improvement of sand activation depth prediction under conditions 
+    of oblique wave breaking. Geo-Marine Letters, 28(2), 65-75.
     """
     if method == MixingLayerMethod.BERTIN_2008:
         return 0.041 * np.sqrt(np.maximum(max_bed_shear_stress - critical_shear_stress, 0.0))
