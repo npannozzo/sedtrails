@@ -402,13 +402,13 @@ def compute_grain_properties(
     Pacific Coasts and Ports '97: Proceedings of the 13th Australasian Coastal and Ocean
     Engineering Conference and the 6th Australasian Port and Harbour Conference; Volume 1. Equation 14
     """
-    # Dimensionless grain size, D* (Soulsby 1997, Equation 75)
+    # Dimensionless grain size, D* (Soulsby 1997, Equation 75, p. 104)
     dstar = (gravity * (sediment_density / water_density - 1) / kinematic_viscosity**2) ** (1 / 3) * grain_diameter
 
-    # Critical Shields number, θ_cr (Soulsby & Whitehouse 1997, Equation 14)
+    # Critical Shields number, θ_cr (Soulsby 1997, Equation 77, p. 106)
     theta_cr = 0.3 / (1 + 1.2 * dstar) + 0.055 * (1 - np.exp(-0.020 * dstar))
 
-    # Settling velocity, w_s (Soulsby 1997, Equation 15)
+    # Settling velocity, w_s (Soulsby 1997, Equation 102, p. 134)
     settling_velocity = (kinematic_viscosity / grain_diameter) * (np.sqrt(10.36**2 + 1.049 * dstar**3) - 10.36)
 
     # Critical shear stress, τ_cr
