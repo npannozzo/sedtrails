@@ -463,7 +463,13 @@ class ParticlePopulation:
             self.particles['is_exposed'] = np.ones(n_particles, dtype=bool)
         else:
             # For stochastic_transport and reduced_velocity methods, use burial_depth vs mixing_depth
+            
+            # if van westen method:
+            # a particle is considered exposed if it is buried at a shallower depth compared to the mixing depth
             self.particles['is_exposed'] = self.particles['burial_depth'] < self.particles['mixing_depth']
+            
+            # if soulsby method:
+            # self.particles['is_exposed'] = (this is where we implement Soulsby's F based on a and b)
 
         # Compute whether particles are released (or retained)
         # FIXME: Temporary implementation
@@ -482,7 +488,7 @@ class ParticlePopulation:
             & self.particles['is_picked_up']
         )
 
-    def update_position(self, flow_field: Dict, current_timestep: float, transport_probability_method: str = None) -> None:
+    def update_position(self, flow_field: Dict, current_timestep: float) -> None:
         """
         Update the position of particles in the population based on the flow field.
 
@@ -492,8 +498,6 @@ class ParticlePopulation:
             A dictionary containing the flow field information.
         current_timestep : float
             The current time step in the simulation in seconds.
-        transport_probability_method: str
-            The method used to calculate transport probability.
 
         """
 
