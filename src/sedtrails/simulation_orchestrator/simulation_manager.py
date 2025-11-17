@@ -417,7 +417,7 @@ class Simulation:
                         flow_field = retriever.get_flow_field(timer.current, flow_field_name)
 
                         # Update particle position
-                        population.update_position(flow_field=flow_field, current_timestep=timer.current_timestep, transport_probability_method=population.population_config.population_config['transport_probability'])
+                        population.update_position(flow_field=flow_field, current_timestep=timer.current_timestep)
 
                 # Collect data from all populations for this timestep using DataManager
                 self.data_manager.collect_timestep_data(xr_data, populations, timer.step_count, timer.current)
@@ -531,15 +531,7 @@ class Simulation:
         )
         print(f'Simulation results saved to: {output_file}')
 
-        # from sedtrails.data_manager.simulation_netcdf_writer import SimulationNetCDFWriter
 
-        # writer = SimulationNetCDFWriter(str(self._get_output_dir()))
-        # writer.write_simulation_results(
-        #     populations,
-        #     trajectory_data=self.data_manager.trajectory_data,
-        #     flow_field_names=flow_field_names,  # TODO: check netcdf structure and Bar's pseudo code
-        #     filename='simulation_results.nc',
-        # )
 
 
 if __name__ == '__main__':
