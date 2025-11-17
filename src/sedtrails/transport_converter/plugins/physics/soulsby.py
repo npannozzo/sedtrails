@@ -48,7 +48,7 @@ class PhysicsPlugin(BasePhysicsPlugin):  # all clases should be called the Physi
         grain_size = self.config.tracer_grain_size
         background_grain_size = self.config.background_grain_size
         dimensionless_grain_size = grain_properties.get('dimensionless_grain_size')
-        critical_shear_stress = grain_properties.get('critical_shear_stress')
+        # critical_shear_stress = grain_properties.get('critical_shear_stress')
         critical_shields = grain_properties.get('critical_shields')
         settling_velocity = grain_properties.get('settling_velocity')
 

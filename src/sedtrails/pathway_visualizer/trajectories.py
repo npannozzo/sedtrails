@@ -3,7 +3,6 @@ Module for visualizing particle trajectories from SedTRAILS NetCDF output files.
 """
 
 from pathlib import Path
-from typing import Union
 import numpy as np
 import matplotlib.pyplot as plt
 import xarray as xr
