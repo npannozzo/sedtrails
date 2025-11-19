@@ -113,6 +113,17 @@ seeding:
 - **CSV files (.csv)**: Comma-separated values
 - **TSV files (.tsv)**: Tab-separated values
 
+### Example Text File
+Here is a simple comma-separated text file with five points (``examples\sources_xy_inlet.txt``), for use in ``examples\sedtrails-example-multisource.yaml``.
+
+```
+39400,16800
+39400,17800
+40000,17300 
+40600,16800 
+40600,17800
+```
+
 ### Data Processing Options
 
 - **Deduplication**: Automatically removes duplicate coordinate pairs when `deduplicate: true`
