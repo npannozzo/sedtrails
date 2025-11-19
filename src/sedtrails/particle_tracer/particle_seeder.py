@@ -287,7 +287,6 @@ class FilePointsStrategy(SeedingStrategy):
     def seed(self, config: PopulationConfig) -> list[Tuple[int, float, float]]:
         import os
         import pandas as pd
-        import numpy as np
 
         settings = getattr(config, 'strategy_settings', {})
         path = settings.get('path', None)
@@ -316,8 +315,10 @@ class FilePointsStrategy(SeedingStrategy):
                     raise ValueError(f'Invalid bbox string: {bbox}')
                 xmin, ymin, xmax, ymax = map(float, parts)
             elif isinstance(bbox, dict):
-                xmin = float(bbox['xmin']); ymin = float(bbox['ymin'])
-                xmax = float(bbox['xmax']); ymax = float(bbox['ymax'])
+                xmin = float(bbox['xmin'])
+                ymin = float(bbox['ymin'])
+                xmax = float(bbox['xmax'])
+                ymax = float(bbox['ymax'])
             else:
                 raise ValueError('bbox must be str "xmin,ymin xmax,ymax" or dict with xmin/ymin/xmax/ymax')
 
@@ -335,7 +336,7 @@ class FilePointsStrategy(SeedingStrategy):
                 sep=None, engine="python",
                 header=0 if has_header else None
             )
-        except Exception as e:
+        except Exception:
             # Fallback: whitespace-delimited
             df = pd.read_csv(path, delim_whitespace=True, header=0 if has_header else None)
 
@@ -371,7 +372,7 @@ class FilePointsStrategy(SeedingStrategy):
             raise ValueError('No valid (x, y) points found after filtering.')
 
         # Build seed locations
-        seed_locations = [(quantity, float(x), float(y)) for x, y in zip(df['x'].to_numpy(), df['y'].to_numpy())]
+        seed_locations = [(quantity, float(x), float(y)) for x, y in zip(df['x'].to_numpy(), df['y'].to_numpy(), strict=True)]
         return seed_locations
 
 class ParticleFactory:
