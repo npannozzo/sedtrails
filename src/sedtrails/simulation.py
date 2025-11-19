@@ -501,7 +501,7 @@ class Simulation:
 
 
 if __name__ == '__main__':
-    sim = Simulation(config_file='examples/config.example_bart.yaml')
+    sim = Simulation(config_file='examples/config.example_natascia.yaml')
     sim.run()
 
     # NOTE: This will failed on the output saving. But that's success
