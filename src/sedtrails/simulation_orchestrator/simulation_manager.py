@@ -4,6 +4,7 @@ import sys
 from typing import Any, Optional
 
 import numpy as np
+from pathlib import Path
 import xarray as xr
 from tqdm import tqdm
 
@@ -75,7 +76,7 @@ class Simulation:
         self.dashboard = self._create_dashboard()  #
         self.writer = self.data_manager.writer
 
-        setup_logging(output_dir=self.writer.output_dir)  # Initialize logging in the results directory
+        setup_logging(output_dir=str(self.writer.output_dir))  # Initialize logging in the results directory
         self.logger = logging.getLogger(__name__)
         self.logger.info('Configuration loaded')
 
@@ -126,8 +127,35 @@ class Simulation:
     def _get_output_dir(self):
         """
         Returns the output directory for the simulation.
+        
+        If the output directory is not explicitly specified or is a default value,
+        uses the directory containing the config file as the base directory.
+        
+        Returns
+        -------
+        Path
+            Path object representing the output directory
         """
-        return self._controller.get('outputs.directory')
+        output_dir = self._controller.get('outputs.directory')
+        
+        # Check if output_dir is a default or relative path that should be relative to config file
+        if output_dir is None or output_dir in ['.', './output', 'output', './results', 'results']:
+            # Use the config file's directory as the base
+            config_file_dir = Path(self._config_file).parent
+            if output_dir in ['./output', 'output']:
+                # Preserve the 'output' subdirectory but make it relative to config file
+                output_dir = config_file_dir / 'output'
+            elif output_dir in ['./results', 'results']:
+                # Preserve the 'results' subdirectory but make it relative to config file
+                output_dir = config_file_dir / 'results'
+            else:
+                # Use config file directory directly
+                output_dir = config_file_dir
+        else:
+            # Convert to Path object for consistency
+            output_dir = Path(output_dir)
+        
+        return output_dir
 
     def _get_physics_config(self):
         """
@@ -508,15 +536,7 @@ class Simulation:
         )
         print(f'Simulation results saved to: {output_file}')
 
-        # from sedtrails.data_manager.simulation_netcdf_writer import SimulationNetCDFWriter
 
-        # writer = SimulationNetCDFWriter(self._get_output_dir())
-        # writer.write_simulation_results(
-        #     populations,
-        #     trajectory_data=self.data_manager.trajectory_data,
-        #     flow_field_names=flow_field_names,  # TODO: check netcdf structure and Bar's pseudo code
-        #     filename='simulation_results.nc',
-        # )
 
     def _expand_time_dimension(self, xr_data: xr.Dataset, new_max_timesteps: int) -> xr.Dataset:
         """

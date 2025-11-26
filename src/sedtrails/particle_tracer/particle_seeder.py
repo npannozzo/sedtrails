@@ -566,9 +566,20 @@ class ParticlePopulation:
         self.particles['is_inside'] = self._outer_envelope.contains_points(
             np.column_stack((self.particles['x'], self.particles['y']))
         )
-
-        # Compute whether particles are exposed (or buried)
-        self.particles['is_exposed'] = self.particles['burial_depth'] < self.particles['mixing_depth']
+                
+        # New conditional logic based on transport_probability_method
+        if self.population_config.population_config['transport_probability'] == 'no_probability':
+            # For no_probability method, all particles are considered exposed (always mobile)
+            self.particles['is_exposed'] = np.ones(n_particles, dtype=bool)
+        else:
+            # For stochastic_transport and reduced_velocity methods, use burial_depth vs mixing_depth
+            
+            # if van westen method:
+            # a particle is considered exposed if it is buried at a shallower depth compared to the mixing depth
+            self.particles['is_exposed'] = self.particles['burial_depth'] < self.particles['mixing_depth']
+            
+            # if soulsby method:
+            # self.particles['is_exposed'] = (this is where we implement Soulsby's F based on a and b)
 
         # Compute whether particles are released (or retained)
         # FIXME: Temporary implementation
